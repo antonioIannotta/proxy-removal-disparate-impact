@@ -5,6 +5,15 @@ class DisparateImpact:
     # This method check the disparate impact for each sensitive attributes in the dataset and returns a dataframe in
     # which a column is the series of attributes and a column is the disparate impact value for each attribute
     def check(self, dataset: pd.DataFrame) -> pd.DataFrame:
+        """
+        This method check the disparate impact for each sensitive attributes in the dataset and returns a dataframe in
+        which a column is the series of attributes and a column is the disparate impact value for each attribute
+        Args:
+            dataset: pd.DataFrame
+
+        Returns:
+            pd.Dataframe
+        """
         sensitive_attributes = self.return_sensitive_attributes(dataset)
         normalized_dataset = self.columns_normalization_max_min(dataset, sensitive_attributes)
         return self.return_disparate_impact(normalized_dataset, sensitive_attributes)
