@@ -6,7 +6,7 @@ class DisparateImpact:
 
     # This method check the disparate impact for each sensitive attributes in the dataset and returns a dataframe in
     # which a column is the series of attributes and a column is the disparate impact value for each attribute
-    def check(self, dataset: pd.DataFrame) -> pd.DataFrame:
+    def check(self, dataset: pd.DataFrame, protected_attributes: list) -> pd.DataFrame:
         """
         This method check the disparate impact for each sensitive attributes in the dataset and returns a dataframe in
         which a column is the series of attributes and a column is the disparate impact value for each attribute
@@ -16,16 +16,15 @@ class DisparateImpact:
         Returns:
             pd.Dataframe
         """
-        sensitive_attributes = self.return_sensitive_attributes(dataset)
-        normalized_dataset = self.columns_normalization_max_min(dataset, sensitive_attributes)
-        return self.return_disparate_impact(normalized_dataset, sensitive_attributes)
+        sensitive_attributes = protected_attributes
+        return self.return_disparate_impact(dataset, sensitive_attributes)
 
     # This method evaluates the fairness starting from the result of the check method.
-    def fairness_evaluation(self, dataset: pd.DataFrame):
-        bias_analysis_dataframe = self.check(dataset)
+    def fairness_evaluation(self, dataset: pd.DataFrame, protected_attributes: list) -> float:
+        bias_analysis_dataframe = self.check(dataset, protected_attributes)
         return_value = 'unfair'
         for value in bias_analysis_dataframe['Disparate Impact'].values:
-            if value < 0.80 or value > 1.25:
+            if value <= 0.80 or value >= 1.25:
                 return_value = 'unfair'
             else:
                 return_value = 'fair'

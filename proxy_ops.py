@@ -16,10 +16,14 @@ def _return_proxy_protected_attribute_df(proxy_variables_df: pd.DataFrame, sensi
     for index, proxy_row in proxy_variables_df.iterrows():
         for consequent in proxy_row['Consequent']:
             for sensitive_attribute in sensitive_attributes:
-                if sensitive_attribute in consequent:
+                if str(consequent).startswith(sensitive_attribute):
                     sensitive_antecedent.append(proxy_row['Antecedent'])
                     sensitive_consequent.append(consequent)
-    return pd.DataFrame({'Antecedent': pd.Series(sensitive_antecedent), 'Consequent': pd.Series(sensitive_consequent)})
+
+    dataframe = pd.DataFrame(
+        {'Antecedent': pd.Series(sensitive_antecedent), 'Consequent': pd.Series(sensitive_consequent)})
+
+    return dataframe
 
 
 def proxy_fixing(original_dataset: pd.DataFrame, proxy_variables: pd.DataFrame,
@@ -36,13 +40,16 @@ def proxy_fixing(original_dataset: pd.DataFrame, proxy_variables: pd.DataFrame,
     """
     proxy_variables_for_sensitive_attributes = _return_proxy_protected_attribute_df(proxy_variables,
                                                                                     sensitive_attributes)
+    
+    print(proxy_variables_for_sensitive_attributes)
+    
     for index, row in proxy_variables_for_sensitive_attributes.iterrows():
         for antecedent in row['Antecedent']:
-            for consequent in row['consequent']:
-                disparate_impact_value = _compute_disparate_impact_for_proxy(antecedent, consequent,
-                                                                             original_dataset)
-                if not 0.8 <= disparate_impact_value <= 1.25:
-                    original_dataset = _remove_proxy_from_dataset(original_dataset, row['Antecedent'])
+            consequent = row['Consequent']
+            disparate_impact_value = _compute_disparate_impact_for_proxy(antecedent, consequent,
+                                                                         original_dataset)
+            if not 0.8 <= disparate_impact_value <= 1.25:
+                original_dataset = _remove_proxy_from_dataset(original_dataset, row['Antecedent'])
 
     return original_dataset
 
@@ -66,7 +73,7 @@ def _compute_disparate_impact_for_proxy(antecedent, consequent,
 def _compute_disparate_impact(dataset: pd.DataFrame, proxy, proxy_value, protected_column, protected_value,
                               privileged_group: bool) -> float:
     result = 0.0
-    if privileged_group:
+    if privileged_group is True:
         proxy_columns_data = dataset[dataset[proxy] == proxy_value]
         result = len(proxy_columns_data[proxy_columns_data[protected_column] == protected_value]) / len(
             proxy_columns_data)
@@ -107,5 +114,16 @@ def _proxy_format_to_column(row: pd.Series) -> list:
     result = []
     for element in row:
         result.append(element.split(' = ')[0])
+
+    return result
+
+
+def _return_list_from_row(row: pd.Series):
+    result = []
+    if len(row) == 1:
+        result.append(row)
+    else:
+        for element in row:
+            result.append(element)
 
     return result
