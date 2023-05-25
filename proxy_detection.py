@@ -36,7 +36,6 @@ def _return_apriori_dataframe(association_results: list) -> pd.DataFrame:
         for ordered_statistic in association_result.ordered_statistics:
             # print(ordered_statistic.items_base)
             antecedent_elements = list(ordered_statistic.items_base)
-            print(antecedent_elements)
             antecedent.append(antecedent_elements)
             # print(ordered_statistic.items_base)
             consequent_elements = list(ordered_statistic.items_add)
