@@ -6,7 +6,7 @@ from proxy_ops import *
 
 def compute(dataset: pd.DataFrame, protected_attributes: list, confidence_threshold: float) -> pd.DataFrame:
     dataset = fix_protected_attributes(dataset, protected_attributes)
-    while DisparateImpact().fairness_evaluation(dataset, protected_attributes) == 'fair':
+    while DisparateImpact().fairness_evaluation(dataset, protected_attributes) == 'unfair':
         dataset = proxy_fixing(dataset, protected_attributes)
         print(dataset)
         

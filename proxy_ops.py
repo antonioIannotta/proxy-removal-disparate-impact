@@ -38,6 +38,7 @@ def proxy_fixing(original_dataset: pd.DataFrame, sensitive_attributes: list) -> 
         pd.DataFrame: _description_
     """
     proxy_variables = return_proxy_variables(original_dataset, 0.8)
+    dataset = original_dataset
     proxy_variables_for_sensitive_attributes = return_proxy_protected_attribute_df(proxy_variables,
                                                                                     sensitive_attributes)
     
@@ -47,7 +48,7 @@ def proxy_fixing(original_dataset: pd.DataFrame, sensitive_attributes: list) -> 
                 
             disparate_impact_value = _compute_disparate_impact_for_proxy(antecedent, consequent,
                                                                          original_dataset)
-            if not 0.8 <= disparate_impact_value <= 1.25:
+            if not 0.8 < disparate_impact_value < 1.25:
                 dataset = _remove_proxy_from_dataset(original_dataset, antecedent)
                     
             else:
