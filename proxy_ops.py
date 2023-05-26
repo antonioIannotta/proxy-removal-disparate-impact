@@ -1,7 +1,7 @@
 import pandas as pd
+from proxy_detection import return_proxy_variables
 
-
-def _return_proxy_protected_attribute_df(proxy_variables_df: pd.DataFrame, sensitive_attributes: list) -> pd.DataFrame:
+def return_proxy_protected_attribute_df(proxy_variables_df: pd.DataFrame, sensitive_attributes: list) -> pd.DataFrame:
     """This method returns a dataframe containing the proxy variables for each sensitive attribute
 
     Args:
@@ -26,8 +26,7 @@ def _return_proxy_protected_attribute_df(proxy_variables_df: pd.DataFrame, sensi
     return dataframe
 
 
-def proxy_fixing(original_dataset: pd.DataFrame, proxy_variables: pd.DataFrame,
-                 sensitive_attributes: list) -> pd.DataFrame:
+def proxy_fixing(original_dataset: pd.DataFrame, sensitive_attributes: list) -> pd.DataFrame:
     """This method returns a dataset with proxy variables fixed in the original dataset
 
     Args:
@@ -38,54 +37,58 @@ def proxy_fixing(original_dataset: pd.DataFrame, proxy_variables: pd.DataFrame,
     Returns:
         pd.DataFrame: _description_
     """
-    proxy_variables_for_sensitive_attributes = _return_proxy_protected_attribute_df(proxy_variables,
+    proxy_variables = return_proxy_variables(original_dataset, 0.8)
+    proxy_variables_for_sensitive_attributes = return_proxy_protected_attribute_df(proxy_variables,
                                                                                     sensitive_attributes)
-    
-    print(proxy_variables_for_sensitive_attributes)
     
     for index, row in proxy_variables_for_sensitive_attributes.iterrows():
         for antecedent in row['Antecedent']:
             consequent = row['Consequent']
+                
             disparate_impact_value = _compute_disparate_impact_for_proxy(antecedent, consequent,
                                                                          original_dataset)
             if not 0.8 <= disparate_impact_value <= 1.25:
-                original_dataset = _remove_proxy_from_dataset(original_dataset, row['Antecedent'])
+                dataset = _remove_proxy_from_dataset(original_dataset, antecedent)
+                    
+            else:
+                continue
 
-    return original_dataset
+    return dataset
 
 
 def _compute_disparate_impact_for_proxy(antecedent, consequent,
                                         original_dataset: pd.DataFrame) -> float:
     proxy = antecedent.split(' = ')[0]
-    proxy_value = antecedent.split(' = ')[1]
+    print(type(proxy))
+    proxy_value = int(antecedent.split(' = ')[1])
     protected_column = consequent.split(' = ')[0]
-    protected_value = consequent.split(' = ')[1]
+    protected_value = int(consequent.split(' = ')[1])
 
     unprivileged_probability = _compute_disparate_impact(original_dataset, proxy, proxy_value, protected_column,
                                                          protected_value, False)
-
     privileged_probability = _compute_disparate_impact(original_dataset, proxy, proxy_value, protected_column,
                                                        protected_value, True)
-
-    return unprivileged_probability / privileged_probability
+    
+    if unprivileged_probability == 0.0:
+        return 0.0
+    else:
+        return unprivileged_probability / privileged_probability
 
 
 def _compute_disparate_impact(dataset: pd.DataFrame, proxy, proxy_value, protected_column, protected_value,
                               privileged_group: bool) -> float:
-    result = 0.0
+    
     if privileged_group is True:
         proxy_columns_data = dataset[dataset[proxy] == proxy_value]
-        result = len(proxy_columns_data[proxy_columns_data[protected_column] == protected_value]) / len(
+        return len(proxy_columns_data.loc[proxy_columns_data[protected_column] == protected_value]) / len(
             proxy_columns_data)
     else:
         proxy_columns_data = dataset[dataset[proxy] != proxy_value]
-        result = len(proxy_columns_data[proxy_columns_data[protected_column] == protected_value]) / len(
+        return len(proxy_columns_data.loc[proxy_columns_data[protected_column] == protected_value]) / len(
             proxy_columns_data)
 
-    return result
 
-
-def _remove_proxy_from_dataset(original_dataset: pd.DataFrame, antecedent_row: pd.Series) -> pd.DataFrame:
+def _remove_proxy_from_dataset(original_dataset: pd.DataFrame, antecedent: str) -> pd.DataFrame:
     """This function removes the proxy columns from the original dataset
 
     Args:
@@ -95,11 +98,9 @@ def _remove_proxy_from_dataset(original_dataset: pd.DataFrame, antecedent_row: p
     Returns:
         pd.DataFrame: _description_
     """
-    columns = _proxy_format_to_column(antecedent_row)
-    for column in columns:
-        original_dataset.drop(column, axis=1, inplace=True)
+    dataset = original_dataset.drop(columns=[antecedent.split(' = ')[0]], axis=1, inplace=False)
 
-    return original_dataset
+    return dataset
 
 
 def _proxy_format_to_column(row: pd.Series) -> list:
