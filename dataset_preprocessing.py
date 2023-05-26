@@ -12,6 +12,10 @@ def fix_protected_attributes(dataset: pd.DataFrame, sensitive_attributes: list) 
             
     return dataset
 
+def remove_columns_from_dataset(dataset: pd.DataFrame, columns_to_drop: list) -> pd.DataFrame:
+    new_dataframe = dataset.drop(columns=[column for column in columns_to_drop])
+    return new_dataframe
+
 #def _return_unique_values_for_attribute(attribute, dataset: pd.DataFrame):
 #        unique_values = []
 #        for value in dataset[attribute].values:
